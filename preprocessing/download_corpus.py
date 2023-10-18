@@ -36,7 +36,12 @@ AVAILABLE_CORPORA = {
     },
 }
 
+"""
+    AVAILABLE_CORPORA에 어떤 wiki dump들이 있는지 커맨드 help를 띄어줍니다
 
+    Returns:
+        str: A formatted string listing available corpora and their descriptions.
+"""
 def _helpstr():
     helpstr = "The following corpora are available for download: "
     for m in AVAILABLE_CORPORA.values():
@@ -44,7 +49,16 @@ def _helpstr():
     helpstr += "\ndownload by passing --corpus {corpus name}"
     return helpstr
 
-
+"""
+    Download the specified Wikipedia corpus to the given directory.
+    
+    Args:
+        output_directory (str): Path to the directory where the dataset will be saved.
+        requested_corpus (str): Name of the corpus to download from AVAILABLE_CORPORA.
+        
+    Raises:
+        KeyError: If the requested_corpus is not in AVAILABLE_CORPORA.
+"""
 def main(output_directory, requested_corpus):
     AVAILABLE_CORPORA[requested_corpus]
     for filename in AVAILABLE_CORPORA[requested_corpus]["files"]:
