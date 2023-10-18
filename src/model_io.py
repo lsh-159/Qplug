@@ -24,11 +24,30 @@ Number = Union[float, int]
 logger = logging.getLogger(__name__)
 
 
+
+"""
+# This function returns the path where the checkpoint will be saved or loaded from.
+
+    Args:
+    - opt: An object that contains configuration parameters, including 'checkpoint_dir' and 'name'.
+
+    Returns:
+    - checkpoint_path (Path): The path to the checkpoint directory.
+"""
 def get_checkpoint_path(opt):
     checkpoint_path = Path(opt.checkpoint_dir) / opt.name
     return checkpoint_path
 
+    
+"""
+# This function creates directories for saving checkpoints.
 
+    Args:
+    - opt: An object that contains configuration parameters.
+
+    Returns:
+    - Tuple[Path, str]: Paths to the checkpoint directory and the index save path.
+"""
 def create_checkpoint_directories(opt):
     checkpoint_path = get_checkpoint_path(opt)
     os.makedirs(checkpoint_path, exist_ok=True)
@@ -38,6 +57,16 @@ def create_checkpoint_directories(opt):
     return checkpoint_path, opt.save_index_path
 
 
+"""
+# This function loads the retriever model and its tokenizer.
+
+    Args:
+    - opt: An object that contains configuration parameters.
+    - opt_checkpoint (optional): Checkpoint options if available.
+
+    Returns:
+    - Tuple[Union[UntiedDualEncoderRetriever, DualEncoderRetriever], transformers.PreTrainedTokenizer]: The retriever model and its tokenizer.
+"""
 def load_retriever(opt, opt_checkpoint=None):
     if opt.use_file_passages:
         return None, None
@@ -58,7 +87,16 @@ def load_retriever(opt, opt_checkpoint=None):
 
     return retriever, retriever_tokenizer
 
+    
+"""
+# This function converts the state dictionary of a DualEncoderRetriever to an UntiedDualEncoderRetriever.
 
+    Args:
+    - state_dict (Dict[str, torch.Tensor]): State dictionary of the DualEncoderRetriever.
+
+    Returns:
+    - Dict[str, torch.Tensor]: Converted state dictionary for the UntiedDualEncoderRetriever.
+"""
 def _convert_state_dict_from_dual_encoder_retriever(state_dict):
     """handles when we want to load an UntiedDualEncoderRetriever from a DualEncoderRetriever state dict"""
     new_state_dict = {}
@@ -70,7 +108,16 @@ def _convert_state_dict_from_dual_encoder_retriever(state_dict):
             new_state_dict[k] = tensor
     return new_state_dict
 
+    
+"""
+# This function loads the reader model and its tokenizer.
 
+    Args:
+    - opt: An object that contains configuration parameters.
+
+    Returns:
+    - Tuple[src.fid.FiD, transformers.PreTrainedTokenizer]: The reader model and its tokenizer.
+"""
 def load_reader(opt):
     reader = None
     if not opt.retrieve_only:
