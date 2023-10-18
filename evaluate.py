@@ -22,6 +22,17 @@ from src.tasks import get_task
 os.environ["TOKENIZERS_PARALLELISM"] = "true"
 
 
+"""
+# This function returns an iterator for evaluation data.
+
+    Args:
+    - opt: An object that contains configuration parameters.
+    - data_path (str): Path to the evaluation data.
+    - task: The specific task object.
+
+    Returns:
+    - data_iterator: An iterator over the evaluation data.
+"""
 def _get_eval_data_iterator(opt, data_path, task):
     data_iterator = task.data_iterator(data_path, opt.global_rank, opt.world_size, opt=opt, is_eval=True)
     data_iterator = filter(None, map(task.process, data_iterator))
@@ -36,7 +47,20 @@ def _get_eval_data_iterator(opt, data_path, task):
 
     return data_iterator
 
+    
+"""
+# This function performs retrieval-only evaluation.
 
+    Args:
+    - model: The model to be evaluated.
+    - index: The index used for retrieval.
+    - opt: An object that contains configuration parameters.
+    - data_path (str): Path to the evaluation data.
+    - step (optional): The current step or iteration.
+
+    Returns:
+    - metrics (defaultdict): A dictionary containing evaluation metrics.
+"""
 @torch.no_grad()
 def run_retrieval_only(model, index, opt, data_path, step=None):
     model.eval()
