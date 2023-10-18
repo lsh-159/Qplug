@@ -192,9 +192,9 @@ def preprocess_triviaqa(orig_dir, output_dir, index_dir):
         with open(index_dir / ("TQA." + split + ".idx.json"), "r") as fin:
             index[split] = json.load(fin)
 
-    with open(orig_dir / "triviaqa-unfiltered" / "unfiltered-web-train.json") as fin:
+    with open(orig_dir / "triviaqa-unfiltered" / "unfiltered-web-train.json", encoding='utf-8') as fin: 
         originaltrain = json.load(fin)["Data"]
-    with open(orig_dir / "triviaqa-unfiltered" / "unfiltered-web-dev.json") as fin:
+    with open(orig_dir / "triviaqa-unfiltered" / "unfiltered-web-dev.json", encoding='utf-8' ) as fin:
         originaldev = json.load(fin)["Data"]
 
     data["train"] = [convert_triviaqa(originaltrain[k]) for k in index["train"]]
@@ -203,7 +203,7 @@ def preprocess_triviaqa(orig_dir, output_dir, index_dir):
     data["test"] = [convert_triviaqa(originaldev[k]) for k in index["test"]]
 
     for split in data:
-        with open(output_dir / (split + ".jsonl"), "w") as fout:
+        with open(output_dir / (split + ".jsonl"), "w", , encoding='utf-8') as fout:
             for ex in data[split]:
                 json.dump(ex, fout, ensure_ascii=False)
                 fout.write("\n")
