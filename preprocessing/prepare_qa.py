@@ -203,7 +203,7 @@ def preprocess_triviaqa(orig_dir, output_dir, index_dir):
     data["test"] = [convert_triviaqa(originaldev[k]) for k in index["test"]]
 
     for split in data:
-        with open(output_dir / (split + ".jsonl"), "w", , encoding='utf-8') as fout:
+        with open(output_dir / (split + ".jsonl"), "w",  encoding='utf-8') as fout:
             for ex in data[split]:
                 json.dump(ex, fout, ensure_ascii=False)
                 fout.write("\n")
