@@ -93,10 +93,10 @@ Notice :
 ```bash
 DATA_DIR=./project_data  			# 중요(수정필요) : 데이터 폴더 이름
 
-# 1. prepare_qa.py : nq, tqa 를 다운해서 train,val,test set({query : str, answer : str}) 을 {DATA_DIR}/data/nq_data/train.jsonl 경로에 저장
+# 1. prepare_qa.py : nq, tqa 를 다운해서 train,val,test set({query : str, answer : str}) 을 {DATA_DIR}/data/nq_data/train.jsonl 경로에 저장 : 5분
 python preprocessing/prepare_qa.py --output_directory ${DATA_DIR}/data/
 
-# 2. download_corpus.py : wiki 2018 corpus를 다운해서 {DATA_DIR} 경로에 저장
+# 2. download_corpus.py : wiki 2018 corpus를 다운해서 {DATA_DIR} 경로에 저장  : 20~30분
 python preprocessing/download_corpus.py --corpus corpora/wiki/enwiki-dec2018 --output_directory ${DATA_DIR} 
 
 port=$(shuf -i 15000-16000 -n 1)
