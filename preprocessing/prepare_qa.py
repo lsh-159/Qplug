@@ -148,7 +148,14 @@ triviaqa_64shot = [
     53320,
     61313,
 ]
-
+# -----------------------------------------------------------------------------
+# convert_triviaqa 함수는 원본 TriviaQA 데이터 포맷을 우리가 원하는 형식으로 변환합니다.
+# 입력: ex (dict) - 원본 TriviaQA 데이터 포맷의 예제
+# 출력: dict - 변환된 형식의 예제
+# 예시: 
+# ex = {"Answer": {"Value": "PARIS", "Aliases": ["Paris", "paris"]}, "Question": "What is the capital of France?"}
+# convert_triviaqa(ex) -> {"question": "What is the capital of France?", "answers": ["Paris", "paris"], "target": "Paris"}
+# -----------------------------------------------------------------------------
 
 def convert_triviaqa(ex):
     target = ex["Answer"]["Value"]
@@ -160,11 +167,25 @@ def convert_triviaqa(ex):
         "target": target,
     }
 
-
+# -----------------------------------------------------------------------------
+# convert_nq 함수는 원본 NaturalQuestions 데이터 포맷을 우리가 원하는 형식으로 변환합니다.
+# 입력: ex (dict) - 원본 NaturalQuestions 데이터 포맷의 예제
+# 출력: dict - 변환된 형식의 예제
+# 예시: 
+# ex = {"question": "What is the capital of France?", "answer": ["Paris"]}
+# convert_nq(ex) -> {"question": "What is the capital of France?", "answers": ["Paris"]}
+# -----------------------------------------------------------------------------
 def convert_nq(ex):
     return {"question": ex["question"], "answers": ex["answer"]}
 
-
+# -----------------------------------------------------------------------------
+# preprocess_triviaqa 함수는 원본 TriviaQA 데이터셋을 전처리하여 우리가 원하는 형식으로 저장합니다.
+# 입력: 
+# - orig_dir (Path) - 원본 TriviaQA 데이터셋이 저장된 디렉토리 경로
+# - output_dir (Path) - 전처리된 데이터셋을 저장할 디렉토리 경로
+# - index_dir (Path) - 인덱스 파일이 저장된 디렉토리 경로
+# 출력: 없음. 하지만 output_dir에 전처리된 데이터셋이 저장됩니다.
+# -----------------------------------------------------------------------------
 def preprocess_triviaqa(orig_dir, output_dir, index_dir):
     data, index = {}, {}
     for split in ["train", "dev", "test"]:
@@ -187,7 +208,14 @@ def preprocess_triviaqa(orig_dir, output_dir, index_dir):
                 json.dump(ex, fout, ensure_ascii=False)
                 fout.write("\n")
 
-
+# -----------------------------------------------------------------------------
+# preprocess_nq 함수는 원본 NaturalQuestions 데이터셋을 전처리하여 우리가 원하는 형식으로 저장합니다.
+# 입력: 
+# - orig_dir (Path) - 원본 NaturalQuestions 데이터셋이 저장된 디렉토리 경로
+# - output_dir (Path) - 전처리된 데이터셋을 저장할 디렉토리 경로
+# - index_dir (Path) - 인덱스 파일이 저장된 디렉토리 경로
+# 출력: 없음. 하지만 output_dir에 전처리된 데이터셋이 저장됩니다.
+# -----------------------------------------------------------------------------
 def preprocess_nq(orig_dir, output_dir, index_dir):
     data, index = {}, {}
     for split in ["train", "dev", "test"]:
@@ -216,7 +244,11 @@ def preprocess_nq(orig_dir, output_dir, index_dir):
                 json.dump(ex, fout, ensure_ascii=False)
                 fout.write("\n")
 
-
+# -----------------------------------------------------------------------------
+# main 함수는 전체 데이터 전처리 파이프라인을 실행합니다.
+# 입력: args (Namespace) - argparse를 통해 파싱된 인자들
+# 출력: 없음. 지정된 디렉토리에 전처리된 데이터셋이 저장됩니다.
+# -----------------------------------------------------------------------------
 def main(args):
     output_dir = Path(args.output_directory)
 
@@ -228,7 +260,8 @@ def main(args):
     triviaqa_tar = output_dir / "triviaqa_data.tar"
     nq_dir = output_dir / "nq_data"
     original_nq_dir = output_dir / "original_naturalquestions"
-
+    
+    # (overwrite 옵션이 주어진 경우) or (필요한 데이터셋이 없는 경우) 다운로드를 수행합니다.
     if args.overwrite:
         print("Overwriting NaturalQuestions and TriviaQA")
         download_triviaqa = True
@@ -236,14 +269,16 @@ def main(args):
     else:
         download_triviaqa = not triviaqa_dir.exists()
         download_nq = not nq_dir.exists()
-
+        
+    # TriviaQA 또는 NaturalQuestions 데이터셋을 다운로드해야 하는 경우 인덱스 파일도 다운로드합니다.
     if download_triviaqa or download_nq:
         index_url = "https://dl.fbaipublicfiles.com/FiD/data/dataindex.tar.gz"
         maybe_download_file(index_url, index_tar)
         if not os.path.exists(index_dir):
             with tarfile.open(index_tar) as tar:
                 tar.extractall(index_dir)
-
+                
+    # TriviaQA 데이터셋을 다운로드하고 전처리합니다.
     if download_triviaqa:
         triviaqa_dir.mkdir(parents=True, exist_ok=True)
         original_triviaqa_url = "http://nlp.cs.washington.edu/triviaqa/data/triviaqa-unfiltered.tar.gz"
@@ -254,7 +289,8 @@ def main(args):
         preprocess_triviaqa(original_triviaqa_dir, triviaqa_dir, index_dir)
     else:
         print("TriviaQA data already exists, not overwriting")
-
+        
+    # NaturalQuestions 데이터셋을 다운로드하고 전처리합니다.
     if download_nq:
         nq_dir.mkdir(parents=True, exist_ok=True)
         nq_dev_url = "https://raw.githubusercontent.com/google-research-datasets/natural-questions/master/nq_open/NQ-open.dev.jsonl"
@@ -265,6 +301,8 @@ def main(args):
     else:
         print("NaturalQuestions data already exists, not overwriting")
 
+    # 불필요한 임시 파일 및 디렉토리를 삭제합니다.
+    # unlink는 pathlib.Path 객체의 메서드로, 해당 경로의 파일을 삭제합니다. missing_ok : 파일이 없으면 건너뛰게 됩니다
     triviaqa_tar.unlink(missing_ok=True)
     index_tar.unlink(missing_ok=True)
     if original_triviaqa_dir.exists():
