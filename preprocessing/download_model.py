@@ -22,7 +22,12 @@ AVAILABLE_MODELS = [
     {"model": "models/atlas_nq/base", "description": "Atlas base model, finetuned on Natural Questions"},
 ]
 
-
+"""
+    (커맨드를 위해)Generate a help string that lists all available models for download.
+    
+    Returns:
+        str: A formatted string listing all available models.
+"""
 def _helpstr():
     helpstr = "The following models are available for download: "
     for m in AVAILABLE_MODELS:
@@ -31,6 +36,16 @@ def _helpstr():
     return helpstr
 
 
+"""
+    Download the specified model to the given output directory.
+    
+    Args:
+        output_directory (str): The directory where the model should be saved.
+        requested_model (str): The name of the model to download.
+        
+    Returns:
+        None
+"""
 def main(output_directory, requested_model):
     model_path = f"{requested_model}/{MODEL_FILE_NAME}"
     source = get_s3_path(model_path)
