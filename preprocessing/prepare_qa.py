@@ -189,7 +189,7 @@ def convert_nq(ex):
 def preprocess_triviaqa(orig_dir, output_dir, index_dir):
     data, index = {}, {}
     for split in ["train", "dev", "test"]:
-        with open(index_dir / ("TQA." + split + ".idx.json"), "r") as fin:
+        with open(index_dir / ("TQA." + split + ".idx.json"), "r", encoding='utf-8') as fin:
             index[split] = json.load(fin)
 
     with open(orig_dir / "triviaqa-unfiltered" / "unfiltered-web-train.json", encoding='utf-8') as fin: 
@@ -219,16 +219,16 @@ def preprocess_triviaqa(orig_dir, output_dir, index_dir):
 def preprocess_nq(orig_dir, output_dir, index_dir):
     data, index = {}, {}
     for split in ["train", "dev", "test"]:
-        with open(index_dir / ("NQ." + split + ".idx.json"), "r") as fin:
+        with open(index_dir / ("NQ." + split + ".idx.json"), "r", encoding='utf-8') as fin:
             index[split] = json.load(fin)
 
     originaltrain, originaldev = [], []
-    with open(orig_dir / "NQ-open.dev.jsonl") as fin:
+    with open(orig_dir / "NQ-open.dev.jsonl", encoding='utf-8') as fin:
         for k, example in enumerate(fin):
             example = json.loads(example)
             originaldev.append(example)
 
-    with open(orig_dir / "NQ-open.train.jsonl") as fin:
+    with open(orig_dir / "NQ-open.train.jsonl", encoding='utf-8') as fin:
         for k, example in enumerate(fin):
             example = json.loads(example)
             originaltrain.append(example)
@@ -239,7 +239,7 @@ def preprocess_nq(orig_dir, output_dir, index_dir):
     data["test"] = [convert_nq(originaldev[k]) for k in index["test"]]
 
     for split in data:
-        with open(output_dir / (split + ".jsonl"), "w") as fout:
+        with open(output_dir / (split + ".jsonl"), "w", encoding='utf-8') as fout:
             for ex in data[split]:
                 json.dump(ex, fout, ensure_ascii=False)
                 fout.write("\n")
@@ -275,7 +275,7 @@ def main(args):
         index_url = "https://dl.fbaipublicfiles.com/FiD/data/dataindex.tar.gz"
         maybe_download_file(index_url, index_tar)
         if not os.path.exists(index_dir):
-            with tarfile.open(index_tar) as tar:
+            with tarfile.open(index_tar, encoding='utf-8') as tar:
                 tar.extractall(index_dir)
                 
     # TriviaQA 데이터셋을 다운로드하고 전처리합니다.
@@ -284,7 +284,7 @@ def main(args):
         original_triviaqa_url = "http://nlp.cs.washington.edu/triviaqa/data/triviaqa-unfiltered.tar.gz"
         maybe_download_file(original_triviaqa_url, triviaqa_tar)
         if not os.path.exists(original_triviaqa_dir):
-            with tarfile.open(triviaqa_tar) as tar:
+            with tarfile.open(triviaqa_tar, encoding='utf-8') as tar:
                 tar.extractall(original_triviaqa_dir)
         preprocess_triviaqa(original_triviaqa_dir, triviaqa_dir, index_dir)
     else:
