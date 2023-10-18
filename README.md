@@ -87,65 +87,33 @@ Notice :
 * Train/dev/test data files should be json-serialized objects, one instance per line. The name of the fields is task dependent (covered in detail in [Tasks](#tasks)), but e.g. for NaturalQuestions, the required fields are `question` (a question string) and `answers` (a list of reference answer strings)
 
 
+실험 코드		
+* assumes 4 nodes, each with 8 GPUs
 
 ```bash
-# assumes 4 nodes, each with 8 GPUs
-DATA_DIR=./splug_data  # your project data
+DATA_DIR=./project_data  			# 중요(수정필요) : 데이터 폴더 이름
 
-# download the NQ data
+# 1. prepare_qa.py : nq, tqa 를 다운해서 train,val,test set({query : str, answer : str}) 을 {DATA_DIR}/data/nq_data/train.jsonl 경로에 저장
 python preprocessing/prepare_qa.py --output_directory ${DATA_DIR}/data/
-# download the Wikipedia 2018 corpus
+
+# 2. download_corpus.py : wiki 2018 corpus를 다운해서 {DATA_DIR} 경로에 저장
 python preprocessing/download_corpus.py --corpus corpora/wiki/enwiki-dec2018 --output_directory ${DATA_DIR} 
 
 port=$(shuf -i 15000-16000 -n 1)
 TRAIN_FILE="${DATA_DIR}/data/nq_data/train.64-shot.jsonl"
 EVAL_FILES="${DATA_DIR}/data/nq_data/dev.jsonl"
 SAVE_DIR=${DATA_DIR}/experiments/
-EXPERIMENT_NAME=my-nq-64-shot-example
+EXPERIMENT_NAME=my-nq-64-shot-example		# 중요(수정필요) : 실험 이름
 TRAIN_STEPS=30
 
-srun python train.py \
-    --shuffle \
-    --train_retriever \
-    --gold_score_mode pdist \ # loss function for retriever (see paper)
-    --use_gradient_checkpoint_reader --use_gradient_checkpoint_retriever\ # save GPU memory with gradient checkpointing at expense of speed
-    --precision fp32 \ # use "bf16" if supported by your GPUs, fp16 is usually unstable
-    --shard_optim --shard_grads \ # Save GPU memory using these optimizations
-    --temperature_gold 0.01 --temperature_score 0.01 \ 
-    --refresh_index -1 \ # for fewshot finetune, refreshing the index (i.e. recomputing the embeddings) is expensive and not really worth it
-    --query_side_retriever_training\ # instead, for fewshot runs, finetuning only the query-encoder of Contriever works well. Remove this flag to finetune whole retriever
-    --target_maxlength 16 \ # max length of generation
-    --reader_model_type google/t5-${SIZE}-lm-adapt \ # architecture of Atlas
-    --dropout 0.1 --weight_decay 0.01 --lr 4e-5 --lr_retriever 4e-5 --scheduler linear \ # optimization flags
-    --text_maxlength 512 \ # max length of question + passage when concatenated
-    --model_path "${DATA_DIR}/models/atlas/${SIZE}" \ # path to the pretrained Atlas model we just downloaded (pass 'none' to init from plain t5 and Contriever)
-    --train_data "${DATA_DIR}/data/nq_data/train.64-shot.jsonl" \ # path the 64-shot train dataset we just downloaded 
-    --eval_data "${DATA_DIR}/data/nq_data/dev.jsonl" \ # path the NQ dev dataset we just downloaded, to evaluate on when training is done
-    --per_gpu_batch_size 1 \
-    --n_context 40 \ # pass the top 40 passages from the retriever to the language model
-    --retriever_n_context 40 \ # finetune the retriever with the top 40 passages
-    --name ${EXPERIMENT_NAME} \ # name of experiment (also the name of the directory the logs and models will be saved to) 
-    --checkpoint_dir ${SAVE_DIR} \ # logs and model checkpoints will be saved to ${SAVE_DIR}/${EXPERIMENT_NAME}
-    --eval_freq ${TRAIN_STEPS} \ # eval after we finish training
-    --log_freq 4 \ # log stats every 4 training steps. Logs will write to ${SAVE_DIR}/${EXPERIMENT_NAME}/run.log but will also write tensorboard logs if installed
-    --total_steps ${TRAIN_STEPS} \ # train for this many steps
-    --warmup_steps 5 \
-    --save_freq ${TRAIN_STEPS} \ # for this example, we'll save one checkpoint, after the training is complete
-    --main_port $port \ # for distributed training
-    --write_results \ # write predictions - they will get saved in the checkpoint folder, ${SAVE_DIR}/${EXPERIMENT_NAME}
-    --task qa \ # we're doing the QA task
-    --index_mode flat \ # don't use faiss, keep index flat (recommended unless using very large indices or very constrained on GPU memory)
-    --passages "${DATA_DIR}/corpora/wiki/enwiki-dec2018/text-list-100-sec.jsonl" "${DATA_DIR}/corpora/wiki/enwiki-dec2018/infobox.jsonl"\ # pass in the wikipedia passages to index and retrieve from (we use both the text and infoboxes)
-    --save_index_path ${SAVE_DIR}/${EXPERIMENT_NAME}/saved_index # save the index we built to this path
-```
-
-The training script will first embed an index for wikipedia 2018, and then save it under the checkpoint folder (`${SAVE_DIR}/${EXPERIMENT_NAME}`). 
-The training script will then fewshot-finetune an Atlas-large NQ model for 30 steps, retrieving from all of wikipedia 2018. 
-This particular script finetunes the query encoder of the retriever and the FID, whilst keeping the passage encoder frozen (see the paper, or [below](#strategies-for-dealing-with-stale-indices) for further details).
-Th script will then evaluate on the dev set and save the checkpoint. 
-You can inspect the experiment logs at `${SAVE_DIR}/${EXPERIMENT_NAME}/run.log` and observe a NQ-dev Exact match score of ~38 has been logged (our run was 38.4), and written predictions which can be inspected.
-
-To evaluate the model, (e.g. on heldout test data) we can use the `evaluate.py` entrypoint script:
+# 3. experiment_1_checkstat.py : top k passage들의 soft contrastive loss 통계 값 확인, {SAVE_DIR}/${EXPERIMENT_NAME}/run.log 경로에 로그 저장
+#
+#   3.1 retriever_model =  huggingface.from_pretrained(Contriever) 를 불러와서 wiki 2018 passage들을 전부 임베딩
+#	time_cost : TBU
+#   3.2 임베딩들을 DistributedFaissIndex 인스턴스에 저장, 인스턴스는 {SAVE_DIR}/${EXPERIMENT_NAME}에 백업 (더이상 3.1, 3.2 시간 소모 X)
+#	time_cost : TBU
+#   3.3 llamaforcpp 로 llama2 q5 인퍼런스 logit 배치 통계량 확인
+# 	time_cost : TBU
 
 ```bash
 srun python evaluate.py \
